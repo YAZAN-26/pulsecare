@@ -1,15 +1,81 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { 
   HeartPulse, Calendar, Search, ShieldCheck, Star, Users, Award, 
   Clock, MapPin, ChevronLeft, Phone, ArrowUpRight, CheckCircle, 
-  Stethoscope, Sparkles, UserCheck, Activity, Building2, HelpCircle
+  Stethoscope, Sparkles, UserCheck, Activity, Building2, HelpCircle,
+  Loader2, User, AlertCircle
 } from 'lucide-react';
 
 export default function Home() {
+  const [formData, setFormData] = useState({
+    patient_name: '',
+    phone: '',
+    specialty: 'طب وجراحة الأسنان',
+    appointment_date: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatusMessage(null);
+
+    if (!formData.patient_name || !formData.phone || !formData.appointment_date) {
+      setStatusMessage({ type: 'error', text: 'يرجى تعبئة كافة الحقول المطلوبة (الاسم، الجوال، والتاريخ).' });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('https://6acbcb4cef37b1504078330a.mockapi.io/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('فشل في إرسال الحجز');
+      }
+
+      setStatusMessage({
+        type: 'success',
+        text: 'تم تسجيل طلب حجز الموعد بنجاح! سنتواصل معك عبر الجوال والواتساب لتأكيد الموعد.',
+      });
+
+      setFormData({
+        patient_name: '',
+        phone: '',
+        specialty: 'طب وجراحة الأسنان',
+        appointment_date: '',
+      });
+    } catch (err: any) {
+      console.error('Error booking appointment:', err);
+      setStatusMessage({
+        type: 'error',
+        text: 'حدث خطأ أثناء الاتصال بالخادم، يرجى المحاولة مرة أخرى.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FAFCFF] text-slate-800 font-sans selection:bg-cyan-500 selection:text-white dir-rtl" dir="rtl">
       
-      {/* 1. الشريط العلوي الرزين والمعلومات */}
+      {/* الشريط العلوي الرزين والمعلومات */}
       <div className="bg-slate-900 text-slate-300 text-xs py-2.5 px-6 border-b border-slate-800">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
           <div className="flex items-center gap-6">
@@ -32,11 +98,9 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 2. الهيدر المودرن الفاخر (Glassmorphic Navigation) */}
+      {/* الهيدر المودرن الفاخر */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          
-          {/* اللوجو */}
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 bg-gradient-to-tr from-cyan-600 via-teal-500 to-emerald-400 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
               <HeartPulse className="w-6 h-6 stroke-[2.5]" />
@@ -51,37 +115,32 @@ export default function Home() {
             </div>
           </div>
 
-          {/* القائمة الرئيسية */}
           <nav className="hidden lg:flex items-center gap-9 text-sm font-bold text-slate-600">
             <a href="#hero" className="text-cyan-600 font-black transition-colors">الرئيسية</a>
             <a href="#services" className="hover:text-cyan-600 transition-colors">التخصصات والخدمات</a>
-            <a href="#doctors" className="hover:text-cyan-600 transition-colors">كبار الاستشاريين</a>
+            <a href="#booking-section" className="hover:text-cyan-600 transition-colors">حجز موعد</a>
             <a href="#about" className="hover:text-cyan-600 transition-colors">عن pulseCare</a>
             <a href="#contact" className="hover:text-cyan-600 transition-colors">تواصل معنا</a>
           </nav>
 
-          {/* زر الحجز الرئيسي */}
           <div className="flex items-center gap-3">
-            <button className="bg-slate-900 hover:bg-cyan-600 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 shadow-xl shadow-slate-900/10 hover:shadow-cyan-600/25 flex items-center gap-2 hover:-translate-y-0.5">
+            <a href="#booking-section" className="bg-slate-900 hover:bg-cyan-600 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 shadow-xl shadow-slate-900/10 hover:shadow-cyan-600/25 flex items-center gap-2 hover:-translate-y-0.5">
               <Calendar className="w-4 h-4 text-cyan-400" />
               <span>احجز موعد كشف</span>
-            </button>
+            </a>
           </div>
         </div>
       </header>
 
-      {/* 3. الهيرو الفاخر جداً والمريح للعين (Hero Section) */}
+      {/* الهيرو الفاخر جداً والمريح للعين */}
       <section id="hero" className="relative pt-12 pb-20 px-6 overflow-hidden">
-        {/* خلفيات ظلال ناعمة */}
         <div className="absolute top-10 right-1/4 w-[500px] h-[500px] bg-cyan-200/40 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-10 left-10 w-[400px] h-[400px] bg-teal-100/60 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
             
-            {/* المحتوى الأيمن */}
             <div className="lg:col-span-7 space-y-7">
-              
               <div className="inline-flex items-center gap-2.5 bg-cyan-50 border border-cyan-200/80 text-cyan-800 px-4 py-2 rounded-full text-xs font-bold shadow-sm">
                 <Sparkles className="w-4 h-4 text-cyan-600" />
                 <span>المركز الطبي الأحدث والمعتمد عالمياً لعام 2026</span>
@@ -96,12 +155,11 @@ export default function Home() {
                 نضع بين يديك نخبة استثنائية من الأطباء الاستشاريين وأحدث التقنيات التشخيصية، لنضمن لك ولعائلتك رحلة علاجية مريحة ونتائج دقيقة ببيئة مريحة وراقية.
               </p>
 
-              {/* أزرار الإجراءات */}
               <div className="flex flex-wrap items-center gap-4 pt-2">
-                <button className="bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:opacity-95 text-white px-8 py-4 rounded-2xl font-extrabold text-base transition-all shadow-xl shadow-cyan-600/25 flex items-center gap-3 group hover:-translate-y-0.5">
+                <a href="#booking-section" className="bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:opacity-95 text-white px-8 py-4 rounded-2xl font-extrabold text-base transition-all shadow-xl shadow-cyan-600/25 flex items-center gap-3 group hover:-translate-y-0.5">
                   <span>احجز استشارتك الطبيّة</span>
                   <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                </button>
+                </a>
 
                 <a href="#services" className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-7 py-4 rounded-2xl font-bold text-base transition-all shadow-sm flex items-center gap-2">
                   <Stethoscope className="w-5 h-5 text-cyan-600" />
@@ -109,7 +167,6 @@ export default function Home() {
                 </a>
               </div>
 
-              {/* نقاط الأمان والخدمة */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-200/60">
                 {[
                   'أطباء زائرون واستشاريون',
@@ -122,10 +179,8 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-
             </div>
 
-            {/* الصورة البصرية الراقية */}
             <div className="lg:col-span-5">
               <div className="relative rounded-3xl p-3 bg-white border border-slate-200/80 shadow-2xl">
                 <div className="relative h-[480px] rounded-2xl overflow-hidden bg-slate-100">
@@ -136,7 +191,6 @@ export default function Home() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
 
-                  {/* كارت تقييم ثقة */}
                   <div className="absolute top-5 right-5 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-slate-100 shadow-xl flex items-center gap-3">
                     <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500">
                       <Star className="w-5 h-5 fill-amber-500" />
@@ -149,7 +203,6 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* كارت حجز تفاعلي سفلية */}
                   <div className="absolute bottom-5 right-5 left-5 bg-white/95 backdrop-blur-md p-5 rounded-2xl border border-slate-100 shadow-2xl">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-emerald-600 font-black text-xs flex items-center gap-1.5">
@@ -168,58 +221,129 @@ export default function Home() {
 
           </div>
 
-          {/* 4. شريط البحث السريع عن طبيب أو عيادة (Interactive Search Bar) */}
-          <div className="mt-16 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-200/50">
-            <div className="grid md:grid-cols-4 gap-4 items-center">
+          {/* نموذج الحجز المباشر المربوط بـ MockAPI */}
+          <div id="booking-section" className="mt-16 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-200/50">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+              <div className="w-10 h-10 bg-cyan-100 text-cyan-700 rounded-xl flex items-center justify-center">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">حجز موعد أونلاين مباشر</h3>
+                <p className="text-xs text-slate-500 font-semibold">اختر العيادة، أدخل بياناتك، وسيتم حفظ حجزك في النظام فوراً</p>
+              </div>
+            </div>
+
+            {statusMessage && (
+              <div className={`mb-6 p-4 rounded-2xl text-xs font-bold flex items-center gap-3 ${
+                statusMessage.type === 'success' 
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                  : 'bg-rose-50 text-rose-800 border border-rose-200'
+              }`}>
+                {statusMessage.type === 'success' ? (
+                  <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+                )}
+                <span>{statusMessage.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleBookingSubmit} className="grid md:grid-cols-4 gap-4 items-end">
               
-              <div className="space-y-1">
-                <label className="text-xs font-black text-slate-500 block mr-1">ابحث عن تخصص:</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-700 block mr-1">اسم المريض الكامل:</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute right-3 top-3.5" />
+                  <input
+                    type="text"
+                    name="patient_name"
+                    required
+                    value={formData.patient_name}
+                    onChange={handleChange}
+                    placeholder="مثال: يزن العتيبي"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pr-9 pl-3 py-3 font-bold focus:outline-none focus:border-cyan-500 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-700 block mr-1">رقم الجوال:</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute right-3 top-3.5" />
+                  <input
+                    type="tel"
+                    name="phone"
+                    required
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="05xxxxxxxx"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pr-9 pl-3 py-3 font-bold focus:outline-none focus:border-cyan-500 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-700 block mr-1">اختر التخصص الطبي:</label>
                 <div className="relative">
                   <Stethoscope className="w-4 h-4 text-slate-400 absolute right-3 top-3.5" />
-                  <select className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pr-9 pl-3 py-3 font-bold focus:outline-none focus:border-cyan-500">
-                    <option>اختر التخصص الطبي...</option>
-                    <option>طب وجراحة الأسنان</option>
-                    <option>الجلدية والتجميل والليزر</option>
-                    <option>الاستشارات الباطنية</option>
-                    <option>طب الأطفال حديثي الولادة</option>
+                  <select
+                    name="specialty"
+                    value={formData.specialty}
+                    onChange={handleChange}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pr-9 pl-3 py-3 font-bold focus:outline-none focus:border-cyan-500 focus:bg-white transition-all"
+                  >
+                    <option value="طب وجراحة الأسنان">طب وجراحة الأسنان</option>
+                    <option value="الجلدية والتجميل المتقدم">الجلدية والتجميل المتقدم</option>
+                    <option value="الاستشارات الباطنية">الاستشارات الباطنية</option>
+                    <option value="طب الأطفال ونموهم">طب الأطفال ونموهم</option>
+                    <option value="النساء والولادة">النساء والولادة</option>
+                    <option value="الطوارئ والطب العام">الطوارئ والطب العام</option>
                   </select>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-black text-slate-500 block mr-1">الطبيب الاستشاري:</label>
-                <div className="relative">
-                  <UserCheck className="w-4 h-4 text-slate-400 absolute right-3 top-3.5" />
-                  <select className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pr-9 pl-3 py-3 font-bold focus:outline-none focus:border-cyan-500">
-                    <option>جميع الأطباء المتاحين...</option>
-                    <option>د. خالد العتيبي (استشاري أسنان)</option>
-                    <option>د. سارة القحطاني (استشارية جلدية)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-black text-slate-500 block mr-1">تاريخ الموعد المناسب:</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-700 block mr-1">تاريخ الموعد المناسب:</label>
                 <div className="relative">
                   <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-3.5" />
-                  <input type="date" className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pr-9 pl-3 py-2.5 font-bold focus:outline-none focus:border-cyan-500" />
+                  <input
+                    type="date"
+                    name="appointment_date"
+                    required
+                    value={formData.appointment_date}
+                    onChange={handleChange}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl pr-9 pl-3 py-2.5 font-bold focus:outline-none focus:border-cyan-500 focus:bg-white transition-all"
+                  />
                 </div>
               </div>
 
-              <div className="pt-5 md:pt-0">
-                <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-3.5 rounded-xl font-black text-sm transition-all shadow-md flex items-center justify-center gap-2">
-                  <Search className="w-4 h-4" />
-                  <span>البحث عن مواعيد متاحين</span>
+              <div className="md:col-span-4 pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:opacity-95 text-white py-3.5 rounded-xl font-black text-sm transition-all shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>جاري حفظ الموعد في النظام...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4" />
+                      <span>تأكيد وحفظ موعد الكشف الآن</span>
+                    </>
+                  )}
                 </button>
               </div>
 
-            </div>
+            </form>
           </div>
 
         </div>
       </section>
 
-      {/* 5. شريط الإحصائيات الفخم (Stats) */}
+      {/* شريط الإحصائيات الفخم */}
       <section className="bg-slate-900 text-white py-12 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
@@ -241,7 +365,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 6. قسم التخصصات الطبية المميزة (Services Grid) */}
+      {/* قسم التخصصات الطبية المميزة */}
       <section id="services" className="py-24 px-6 max-w-7xl mx-auto">
         <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
           <span className="text-cyan-600 font-black text-xs tracking-widest uppercase bg-cyan-50 px-4 py-1.5 rounded-full border border-cyan-200/60">
@@ -272,7 +396,7 @@ export default function Home() {
               <h3 className="text-xl font-bold mb-3 text-slate-900 group-hover:text-cyan-600 transition-colors">{item.title}</h3>
               <p className="text-slate-600 text-sm leading-relaxed mb-6 font-normal">{item.desc}</p>
               
-              <a href="#" className="text-xs font-black text-cyan-600 inline-flex items-center gap-1.5 hover:gap-2.5 transition-all">
+              <a href="#booking-section" className="text-xs font-black text-cyan-600 inline-flex items-center gap-1.5 hover:gap-2.5 transition-all">
                 <span>احجز في هذه العيادة</span>
                 <ChevronLeft className="w-4 h-4" />
               </a>
@@ -281,7 +405,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. فوتر الموقع العالمي (Footer) */}
+      {/* فوتر الموقع العالمي */}
       <footer className="bg-slate-900 text-slate-400 pt-16 pb-12 px-6 border-t border-slate-800">
         <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-10 mb-12">
           
@@ -300,9 +424,9 @@ export default function Home() {
           <div>
             <h4 className="text-white font-bold text-sm mb-4">روابط سريعة</h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">عن المركز الطبي</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">قائمة الاستشاريين</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">حجز موعد أونلاين</a></li>
+              <li><a href="#about" className="hover:text-cyan-400 transition-colors">عن المركز الطبي</a></li>
+              <li><a href="#services" className="hover:text-cyan-400 transition-colors">قائمة الاستشاريين</a></li>
+              <li><a href="#booking-section" className="hover:text-cyan-400 transition-colors">حجز موعد أونلاين</a></li>
               <li><a href="#" className="hover:text-cyan-400 transition-colors">الأسئلة الشائعة</a></li>
             </ul>
           </div>
@@ -310,10 +434,10 @@ export default function Home() {
           <div>
             <h4 className="text-white font-bold text-sm mb-4">العيادات الرئيسية</h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">عيادة الأسنان</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">عيادة الجلدية والتجميل</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">عيادة الأطفال</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">قسم الطوارئ</a></li>
+              <li><a href="#booking-section" className="hover:text-cyan-400 transition-colors">عيادة الأسنان</a></li>
+              <li><a href="#booking-section" className="hover:text-cyan-400 transition-colors">عيادة الجلدية والتجميل</a></li>
+              <li><a href="#booking-section" className="hover:text-cyan-400 transition-colors">عيادة الأطفال</a></li>
+              <li><a href="#booking-section" className="hover:text-cyan-400 transition-colors">قسم الطوارئ</a></li>
             </ul>
           </div>
 
